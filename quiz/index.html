@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="단어시험">
+<meta name="theme-color" content="#E4E8E1">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<title>고급영어작문 어휘 100 · 섞어 보기</title>
+<style>
+  :root{
+    --paper:#E4E8E1;
+    --card:#F7F9F4;
+    --ink:#22292B;
+    --ink-soft:#667573;
+    --line:#C3CCC2;
+    --teal:#20655A;
+    --mulberry:#7B2340;
+    --gold:#8A7223;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,-apple-system,sans-serif;
+    font-size:16px; line-height:1.5;
+    -webkit-text-size-adjust:100%;
+    padding:calc(20px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:620px;margin:0 auto}
+
+  .eyebrow{
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0 0 6px;
+  }
+  h1{
+    font-family:"Nanum Myeongjo","Apple SD Gothic Neo",serif;
+    font-weight:700;font-size:26px;line-height:1.25;margin:0 0 4px;
+    letter-spacing:-.01em;
+  }
+  .sub{color:var(--ink-soft);font-size:13.5px;margin:0 0 22px}
+
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:18px 16px;
+    margin-bottom:14px;
+  }
+  .flabel{
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0 0 8px;
+  }
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opt{
+    appearance:none;border:1px solid var(--line);background:transparent;
+    color:var(--ink);font:inherit;font-size:14px;
+    padding:9px 13px;border-radius:2px;cursor:pointer;
+    min-height:40px;
+  }
+  .opt[aria-pressed="true"]{
+    background:var(--ink);color:var(--card);border-color:var(--ink);
+  }
+  .opt:focus-visible,.choice:focus-visible,button:focus-visible,input:focus-visible{
+    outline:2px solid var(--gold);outline-offset:2px;
+  }
+  .range-note{font-size:12.5px;color:var(--ink-soft);margin:10px 0 0}
+  .note{font-size:12.5px;color:var(--ink-soft);margin:10px 0 0}
+
+  .start{
+    width:100%;margin-top:4px;
+    background:var(--ink);color:var(--card);
+    border:none;border-radius:3px;
+    font:inherit;font-size:16px;font-weight:600;
+    padding:15px;cursor:pointer;
+  }
+  .start:active{transform:translateY(1px)}
+
+  /* page-edge progress */
+  .edge{display:flex;gap:2px;align-items:flex-end;height:16px;margin-bottom:14px}
+  .tick{flex:1;height:7px;background:var(--line);border-radius:1px;transition:height .18s,background .18s}
+  .tick.done{height:14px;background:var(--teal)}
+  .tick.miss{height:14px;background:var(--mulberry)}
+  .tick.now{height:16px;background:var(--ink)}
+
+  .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-bottom:10px}
+
+  .q{
+    background:var(--card);border:1px solid var(--line);border-radius:3px;
+    padding:26px 18px;text-align:center;margin-bottom:12px;
+  }
+  .pos{font-size:12px;color:var(--ink-soft);letter-spacing:.08em}
+  .prompt{
+    font-family:"Nanum Myeongjo","Apple SD Gothic Neo",serif;
+    font-size:30px;line-height:1.3;margin:8px 0 2px;word-break:keep-all;
+  }
+  .prompt.small{font-size:24px}
+  .caret{color:var(--ink-soft);font-size:13px;letter-spacing:.3em}
+
+  input[type=text]{
+    width:100%;font:inherit;font-size:19px;text-align:center;
+    padding:14px 12px;border:1px solid var(--line);border-radius:3px;
+    background:var(--card);color:var(--ink);
+  }
+  .choice{
+    display:block;width:100%;text-align:left;
+    background:var(--card);border:1px solid var(--line);border-radius:3px;
+    font:inherit;font-size:16px;padding:14px;margin-bottom:8px;cursor:pointer;
+    color:var(--ink);
+  }
+  .choice .n{color:var(--ink-soft);font-size:12px;margin-right:10px}
+  .choice.right{border-color:var(--teal);background:#E7F0EC;color:var(--teal);font-weight:600}
+  .choice.wrong{border-color:var(--mulberry);background:#F3E6EA;color:var(--mulberry)}
+  .choice[disabled]{cursor:default}
+
+  .verdict{min-height:26px;text-align:center;font-size:15px;margin:10px 0 6px}
+  .verdict.right{color:var(--teal);font-weight:600}
+  .verdict.wrong{color:var(--mulberry)}
+  .verdict b{font-family:"Nanum Myeongjo",serif;font-size:18px}
+
+  .row{display:flex;gap:8px}
+  .btn{
+    flex:1;font:inherit;font-size:15px;font-weight:600;padding:14px;
+    border-radius:3px;border:1px solid var(--ink);
+    background:var(--ink);color:var(--card);cursor:pointer;
+  }
+  .btn.ghost{background:transparent;color:var(--ink)}
+
+  .score{
+    background:var(--card);border:1px solid var(--line);border-radius:3px;
+    padding:24px 18px;text-align:center;margin-bottom:14px;
+  }
+  .score .big{
+    font-family:"Nanum Myeongjo",serif;font-size:44px;line-height:1;
+  }
+  .score .of{color:var(--ink-soft);font-size:15px}
+
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  td{border-bottom:1px solid var(--line);padding:9px 4px;vertical-align:top}
+  td.num{color:var(--ink-soft);font-size:12px;width:30px}
+  td.w{font-family:"Nanum Myeongjo",serif;font-weight:700;width:38%}
+  .yours{display:block;color:var(--mulberry);font-size:12.5px;margin-top:2px}
+  .setbtn{display:block;width:100%;text-align:left;background:var(--card);
+    border:1px solid var(--line);border-radius:3px;padding:16px;margin-bottom:8px;
+    cursor:pointer;font:inherit;color:var(--ink)}
+  .setbtn b{font-family:"Nanum Myeongjo","Apple SD Gothic Neo",serif;font-weight:700;
+    font-size:19px;display:block;margin-bottom:3px}
+  .setbtn span{font-size:12.5px;color:var(--ink-soft)}
+  .setbar{display:flex;justify-content:space-between;align-items:center;padding:12px 14px}
+  .setbar b{font-size:15px}
+  .chg{background:none;border:none;color:var(--ink-soft);font:inherit;font-size:12.5px;
+    text-decoration:underline;cursor:pointer;padding:4px}
+  .hidden{display:none}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">고급영어작문 어휘 list</p>
+  <h1>순서 없이, 섞어서</h1>
+  <p class="sub">시작할 때마다 문제 순서와 보기가 새로 섞입니다.</p>
+
+  <!-- SET PICKER -->
+  <section id="pick">
+    <p class="flabel" style="margin-bottom:10px">단어 세트 고르기</p>
+    <div id="setList"></div>
+    <p class="note" style="text-align:center;margin-top:14px">버전 2026-09-03</p>
+  </section>
+
+  <!-- SETUP -->
+  <section id="setup" class="hidden">
+    <div class="panel setbar">
+      <b id="setName"></b>
+      <button class="chg" id="chgSet" type="button">세트 바꾸기</button>
+    </div>
+    <div class="panel">
+      <p class="flabel">범위</p>
+      <div class="opts" id="rangeOpts"></div>
+      <p class="range-note" id="rangeNote"></p>
+    </div>
+
+    <div class="panel">
+      <p class="flabel">방향</p>
+      <div class="opts" id="modeOpts"></div>
+    </div>
+
+    <div class="panel">
+      <p class="flabel">문항 수</p>
+      <div class="opts" id="countOpts"></div>
+    </div>
+
+    <button class="start" id="startBtn">시험 시작</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="hidden">
+    <div class="edge" id="edge"></div>
+    <div class="meta">
+      <span id="counter"></span>
+      <span id="tally"></span>
+    </div>
+
+    <div class="q">
+      <div class="pos" id="qpos"></div>
+      <div class="prompt" id="qprompt"></div>
+      <div class="caret" id="qcaret"></div>
+    </div>
+
+    <div id="answerArea"></div>
+    <div class="verdict" id="verdict"></div>
+
+    <div class="row">
+      <button class="btn ghost" id="quitBtn">그만두기</button>
+      <button class="btn" id="nextBtn">다음</button>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="hidden">
+    <div class="score">
+      <div class="big"><span id="sNum"></span><span class="of" id="sDen"></span></div>
+      <div class="of" id="sPct"></div>
+    </div>
+    <div class="panel" id="missPanel"></div>
+    <div class="row">
+      <button class="btn" id="retryWrong">틀린 것만 다시</button>
+      <button class="btn ghost" id="restart">처음으로</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ===== 단어 세트 =====================================================
+   새 세트를 추가하려면 아래 배열 끝에 다음 형태로 이어 붙이면 됩니다.
+     { id:"set5", name:"세트 이름", rows:[
+        [번호,"word","품사","뜻"],
+        ...
+     ]}
+   품사 칸이 없는 표는 "" 로 비워 두면 됩니다.
+   id 는 다른 세트와 겹치지 않게 하세요. 학습 기록이 id 기준으로 저장됩니다.
+   ==================================================================== */
+var SETS = [
+  { id:"set1", name:"고급영어작문 1", rows:[
+   [1,"observe","v.","관찰하다"],
+   [2,"notice","v.","알아차리다"],
+   [3,"perceive","v.","인식하다"],
+   [4,"linger","v.","오래 남다"],
+   [5,"drift","v.","떠다니다, 흘러가다"],
+   [6,"resemble","v.","~와 닮다"],
+   [7,"capture","v.","포착하다"],
+   [8,"depict","v.","묘사하다"],
+   [9,"portray","v.","그려내다"],
+   [10,"convey","v.","전달하다"],
+   [11,"evoke","v.","불러일으키다"],
+   [12,"embody","v.","구현하다, 상징적으로 나타내다"],
+   [13,"signify","v.","의미하다"],
+   [14,"emerge","v.","나타나다"],
+   [15,"unfold","v.","펼쳐지다"],
+   [16,"vivid","adj.","생생한"],
+   [17,"subtle","adj.","미묘한"],
+   [18,"delicate","adj.","섬세한"],
+   [19,"intricate","adj.","정교한"],
+   [20,"tangible","adj.","실재하는"],
+   [21,"fleeting","adj.","순간적인"],
+   [22,"radiant","adj.","빛나는"],
+   [23,"serene","adj.","평온한"],
+   [24,"tranquil","adj.","고요한"],
+   [25,"gloomy","adj.","어두운, 우울한"],
+   [26,"haunting","adj.","잊히지 않는"],
+   [27,"picturesque","adj.","그림 같은"],
+   [28,"barren","adj.","황량한"],
+   [29,"vibrant","adj.","생기 넘치는"],
+   [30,"dim","n.","어두운, 희미한"],
+   [31,"nostalgia","n.","향수, 그리움"],
+   [32,"longing","n.","갈망, 그리움"],
+   [33,"melancholy","n.","애수, 우울감"],
+   [34,"delight","n.","기쁨"],
+   [35,"sorrow","n.","슬픔"],
+   [36,"anticipation","n.","기대감"],
+   [37,"affection","n.","애정"],
+   [38,"vulnerability","n.","취약함"],
+   [39,"imagery","n.","심상, 이미지"],
+   [40,"metaphor","n.","은유"],
+   [41,"simile","n.","직유"],
+   [42,"symbolism","n.","상징"],
+   [43,"personification","n.","의인법"],
+   [44,"irony","n.","아이러니"],
+   [45,"repetition","n.","반복"],
+   [46,"rhythm","n.","리듬"],
+   [47,"tone","n.","어조"],
+   [48,"voice","n.","화자의 목소리"],
+   [49,"enhance","v.","향상시키다, 돋보이게 하다"],
+   [50,"allusion","n.","암시, 간접적 언급"],
+   [51,"narrative","n.","서사"],
+   [52,"narrator","n.","화자"],
+   [53,"protagonist","n.","주인공"],
+   [54,"antagonist","n.","적대자"],
+   [55,"setting","n.","배경"],
+   [56,"plot","n.","줄거리"],
+   [57,"conflict","n.","갈등"],
+   [58,"climax","n.","절정"],
+   [59,"resolution","n.","해결, 결말"],
+   [60,"episode","n.","사건, 에피소드"],
+   [61,"encounter","n.","만남"],
+   [62,"wander","v.","돌아다니다"],
+   [63,"stumble","v.","비틀거리다, 우연히 발견하다"],
+   [64,"hesitate","v.","망설이다"],
+   [65,"confront","v.","맞서다"],
+   [66,"pursue","v.","추구하다"],
+   [67,"struggle","v./n.","고군분투하다, 어려움"],
+   [68,"overcome","v.","극복하다"],
+   [69,"endure","v.","견디다"],
+   [70,"betray","v.","배신하다"],
+   [71,"deceive","v.","속이다"],
+   [72,"conceal","v.","숨기다"],
+   [73,"reveal","v.","드러내다"],
+   [74,"escape","v.","탈출하다"],
+   [75,"transform","v.","변화시키다"],
+   [76,"recall","v.","기억해 내다"],
+   [77,"immerse","v.","몰입시키다, 몰입하다"],
+   [78,"unexpected","adj.","예상치 못한"],
+   [79,"inevitable","adj.","피할 수 없는"],
+   [80,"mysterious","adj.","신비로운"],
+   [81,"dramatic","adj.","극적인"],
+   [82,"compelling","adj.","흥미진진한"],
+   [83,"suspenseful","adj.","긴장감 있는"],
+   [84,"authentic","adj.","진정성 있는"],
+   [85,"relatable","adj.","공감할 수 있는"],
+   [86,"memorable","adj.","기억에 남는"],
+   [87,"symbolic","adj.","상징적인"],
+   [88,"flashback","n.","회상 장면"],
+   [89,"foreshadowing","n.","복선"],
+   [90,"dialogue","n.","대화"],
+   [91,"monologue","n.","독백"],
+   [92,"characterization","n.","인물 형상화"],
+   [93,"transition","n.","전환"],
+   [94,"twist","n.","반전"],
+   [95,"anecdote","n.","일화"],
+   [96,"pacing","n.","이야기의 속도 조절"],
+   [97,"sequence","n.","사건의 순서"],
+   [98,"impetus","n.","추진력, 동기"],
+   [99,"compulsion","n.","강한 충동, 강박"],
+   [100,"intrigue","v.","흥미를 끌다"]
+  ]},
+  { id:"set2", name:"고급영어작문 2", rows:[
+   [101,"allocate","v.","할당하다"],
+   [102,"implement","v.","시행하다"],
+   [103,"facilitate","v.","촉진하다"],
+   [104,"acquire","v.","획득하다"],
+   [105,"retain","v.","유지하다"],
+   [106,"optimize","v.","최적화하다"],
+   [107,"expand","v.","확대하다"],
+   [108,"establish","v.","설립하다, 확립하다"],
+   [109,"maintain","v.","유지하다"],
+   [110,"exceed","v.","초과하다"],
+   [111,"comply","v.","준수하다"],
+   [112,"authorize","v.","승인하다"],
+   [113,"designate","v.","지정하다"],
+   [114,"assign","v.","할당하다, 배정하다"],
+   [115,"supervise","v.","감독하다"],
+   [116,"negotiate","v.","협상하다"],
+   [117,"recruit","v.","채용하다"],
+   [118,"promote","v.","승진시키다, 홍보하다"],
+   [119,"resign","v.","사임하다"],
+   [120,"compensate","v.","보상하다"],
+   [121,"reimburse","v.","변제하다"],
+   [122,"purchase","v.","구매하다"],
+   [123,"manufacture","v.","제조하다"],
+   [124,"distribute","v.","배포하다, 유통하다"],
+   [125,"inventory","n.","재고"],
+   [126,"itinerary","n.","여행 일정"],
+   [127,"reservation","n.","예약"],
+   [128,"accommodation","n.","숙박 시설"],
+   [129,"departure","n.","출발"],
+   [130,"destination","n.","목적지"],
+   [131,"arrival","n.","도착"],
+   [132,"luggage","n.","수하물"],
+   [133,"passenger","n.","승객"],
+   [134,"boarding","n.","탑승"],
+   [135,"delay","n./v.","지연 / 지연시키다"],
+   [136,"cancellation","n.","취소"],
+   [137,"complimentary","adj.","무료의"],
+   [138,"reservation","n.","예약"],
+   [139,"scenic","adj.","경치 좋은"],
+   [140,"convenient","adj.","편리한"],
+   [141,"enroll","v.","등록하다"],
+   [142,"curriculum","n.","교육과정"],
+   [143,"assignment","n.","과제"],
+   [144,"qualification","n.","자격"],
+   [145,"scholarship","n.","장학금"],
+   [146,"tuition","n.","수업료"],
+   [147,"attendance","n.","출석"],
+   [148,"faculty","n.","교수진"],
+   [149,"institution","n.","기관"],
+   [150,"certification","n.","자격증, 인증"],
+   [151,"innovative","adj.","혁신적인"],
+   [152,"efficient","adj.","효율적인"],
+   [153,"durable","adj.","내구성이 있는"],
+   [154,"compatible","adj.","호환되는"],
+   [155,"technical","adj.","기술적인"],
+   [156,"update","n./v.","업데이트 / 갱신하다"],
+   [157,"install","v.","설치하다"],
+   [158,"access","n./v.","접근 / 접근하다"],
+   [159,"device","n.","장치"],
+   [160,"maintenance","n.","유지보수"],
+   [161,"consumption","n.","소비"],
+   [162,"sustainable","adj.","지속가능한"],
+   [163,"environmental","adj.","환경의"],
+   [164,"renewable","adj.","재생 가능한"],
+   [165,"resource","n.","자원"],
+   [166,"regulation","n.","규정"],
+   [167,"policy","n.","정책"],
+   [168,"requirement","n.","요구사항"],
+   [169,"procedure","n.","절차"],
+   [170,"permission","n.","허가"],
+   [171,"approximately","adv.","대략"],
+   [172,"considerably","adv.","상당히"],
+   [173,"frequently","adv.","자주"],
+   [174,"gradually","adv.","점차"],
+   [175,"immediately","adv.","즉시"],
+   [176,"eventually","adv.","결국"],
+   [177,"currently","adv.","현재"],
+   [178,"previously","adv.","이전에"],
+   [179,"temporarily","adv.","일시적으로"],
+   [180,"exclusively","adv.","독점적으로, 오로지"],
+   [181,"eligible","adj.","자격이 있는"],
+   [182,"mandatory","adj.","의무적인"],
+   [183,"prospective","adj.","장래의, 예상되는"],
+   [184,"consecutive","adj.","연속적인"],
+   [185,"substantial","adj.","상당한"],
+   [186,"preliminary","adj.","예비의"],
+   [187,"annual","adj.","연례의"],
+   [188,"internal","adj.","내부의"],
+   [189,"external","adj.","외부의"],
+   [190,"mutual","adj.","상호 간의"],
+   [191,"accurate","adj.","정확한"],
+   [192,"affordable","adj.","감당할 수 있는"],
+   [193,"competitive","adj.","경쟁력 있는"],
+   [194,"beneficial","adj.","유익한"],
+   [195,"essential","adj.","필수적인"],
+   [196,"sufficient","adj.","충분한"],
+   [197,"prior","adj.","이전의"],
+   [198,"respective","adj.","각각의"],
+   [199,"entire","adj.","전체의"],
+   [200,"vacant","adj.","비어 있는, 공석의"]
+  ]},
+  { id:"set3", name:"고급영어토론 1", rows:[
+   [1,"resolution","","논제, 결의안"],
+   [2,"affirmative","","찬성 측"],
+   [3,"negative","","반대 측"],
+   [4,"constructive","","입론"],
+   [5,"rebuttal","","반박"],
+   [6,"crossfire","","교차 질문"],
+   [7,"grand crossfire","","전체 교차 질문"],
+   [8,"summary","","요약 연설"],
+   [9,"final focus","","최종 연설"],
+   [10,"framework","","틀, 기준"],
+   [11,"contention","","주장"],
+   [12,"subpoint","","하위 주장"],
+   [13,"evidence","","증거"],
+   [14,"citation","","출처"],
+   [15,"warrant","","정당화 근거"],
+   [16,"impact","","영향"],
+   [17,"turn","","반전 논리"],
+   [18,"link","","연결고리"],
+   [19,"internal link","","내부 연결"],
+   [20,"uniqueness","","유일성"],
+   [21,"weighing","","비교 평가"],
+   [22,"flow","","흐름 기록"],
+   [23,"extension","","연장, 확장"],
+   [24,"collapse","","주장의 압축"],
+   [25,"clash","","논점 충돌"],
+   [26,"frontline","","초기 반박"],
+   [27,"preempt","","선제 반박"],
+   [28,"cross-apply","","교차 적용"],
+   [29,"drop","","빠뜨리다"],
+   [30,"extend","","주장을 이어가다"],
+   [31,"rejoinder","","응수, 답변"],
+   [32,"standard","","기준"],
+   [33,"voting issue","","투표 쟁점"],
+   [34,"judge paradigm","","심판 기준"],
+   [35,"ballot","","판정지"],
+   [36,"counterplan","","대안 계획"],
+   [37,"disadvantage (da)","","불리점"],
+   [38,"signposting","","방향 제시"],
+   [39,"time signals","","시간 신호"],
+   [40,"prep time","","준비 시간"],
+   [41,"roadmap","","연설 순서 안내"],
+   [42,"concede","","양보하다"],
+   [43,"extend an argument","","주장을 연장하다"],
+   [44,"strategic omission","","전략적 생략"],
+   [45,"spark","","촉발하다, 일으키다"],
+   [46,"spark a heated (debate)","","뜨거운/열띤 (논란/논쟁)을 일으켰다"],
+   [47,"feature","","포함했다, (특징으로) 보여주었다"],
+   [48,"display","","표시하다"],
+   [49,"menu item","","메뉴 항목"],
+   [50,"per visit","","방문당"],
+   [51,"draw mixed reactions","","엇갈린 반응을 불러일으키다"],
+   [52,"understandable","","이해할 수 있는, 납득이 가는"],
+   [53,"filthy","","더러운"],
+   [54,"perspective","","관점"],
+   [55,"commenter","","댓글 작성자"],
+   [56,"behavior","","행동"],
+   [57,"brazenly","","뻔뻔스럽게"],
+   [58,"inconsiderate","","배려심 없는"],
+   [59,"sympathetic","","공감하는"],
+   [60,"(fee) excessive","","(수수료) 과도한"],
+   [61,"come off as","","~처럼 느끼다, ~한 인상을 주다"],
+   [62,"cold-hearted","","냉정한"],
+   [63,"burden","","부담"],
+   [64,"facility","","시설, 편의시설"],
+   [65,"flare-up","","갑작스러운 분출 / 격화"],
+   [66,"string of","","일련의"],
+   [67,"dispute","","논란, 분쟁"],
+   [68,"access","","이용, 접근"],
+   [69,"clash","","충돌"],
+   [70,"franchise","","가맹점, 프랜차이즈"],
+   [71,"confront","","~에게 따져 묻다, 대면하다"],
+   [72,"according to","","~에 따르면"],
+   [73,"allegedly","","주장한 바에 의하면"],
+   [74,"escalate","","악화되었다, 격화되었다"],
+   [75,"obstruction of business","","업무방해(죄)"],
+   [76,"allegation","","진술"],
+   [77,"determine","","판단하다, 결론을 내리다"],
+   [78,"apply","","적용되다, 해당하다"],
+   [79,"fueling","","(논란 등에) 불을 지피는, 더 가열시키는"],
+   [80,"stuffed doll","","봉제인형"],
+   [81,"powered","","작동하는, 구동되는"],
+   [82,"conversational (AI)","","대화형(AI)"],
+   [83,"barely","","간신히"],
+   [84,"struggle","","힘들어하다, 애를 쓰다"],
+   [85,"voice-phishing","","보이스피싱"],
+   [86,"scam","","사기, 속임수"],
+   [87,"companion","","동반자"],
+   [88,"welfare","","복지"],
+   [89,"program","","프로그램, 사업, 제도"],
+   [90,"refer to","","언급하다, 칭하다"],
+   [91,"elderly","","연세가 드신, 고령의"],
+   [92,"resident","","주민, 거주자"],
+   [93,"address","","(문제를) 해결하다, 다루다"],
+   [94,"frequently","","자주"],
+   [95,"senior","","어르신, 노인, 고령자"],
+   [96,"resembling","","~와 유사한"],
+   [97,"collapse","","무너지다"],
+   [98,"financial crisis","","금융 위기"],
+   [99,"divorce","","이혼하다, 이혼"],
+   [100,"health declining","","건강 악화"]
+  ]},
+  { id:"set4", name:"고급영어토론 2", rows:[
+   [101,"steady","","안정적인"],
+   [102,"periods of...","","...기간 동안"],
+   [103,"welfare","","복지"],
+   [104,"assistance","","지원, 보조금, 도움"],
+   [105,"rarely","","드물게"],
+   [106,"disorganized","","무질서한"],
+   [107,"irregular","","불규칙한"],
+   [108,"routine","","일과, 일상"],
+   [109,"stretch","","지속, 연속된 시간"],
+   [110,"constantly","","끊임없이"],
+   [111,"nagging","","잔소리"],
+   [112,"recall","","회상하다, 기억해 내다"],
+   [113,"gradually","","서서히"],
+   [114,"shift","","변화하다, 바뀌다"],
+   [115,"structured","","규칙적인, 체계적인"],
+   [116,"completely","","완전히"],
+   [117,"repair","","수리하다"],
+   [118,"laundromat","","세탁소"],
+   [119,"repeatedly","","되풀이하여, 여러 번"],
+   [120,"trial","","시범의, 시험적인"],
+   [121,"(could not) bear to...","","차마 ~할 수가 없다 (견딜 수 없다)"],
+   [122,"attach","","정을 붙이다, 애착을 갖다"],
+   [123,"hardship","","고난"],
+   [124,"widow","","과부"],
+   [125,"decade","","10년"],
+   [126,"(cardboard) scrap","","(폐지·폐품) 파지, 조각"],
+   [127,"form","","(관계 등을) 형성하다, 맺다"],
+   [128,"nursing home","","요양원"],
+   [129,"sorrow","","슬픔"],
+   [130,"resemble","","닮다"],
+   [131,"display","","보여주다, 화면에 띄우다"],
+   [132,"schizophrenia","","조현병, 정신분열증"],
+   [133,"hallucinations","","환각"],
+   [134,"violent","","폭력적인"],
+   [135,"episodes","","(증상의) 발작, 증상 출현 시기"],
+   [136,"antidepressant medication","","항우울제"],
+   [137,"version (of myself)","","(~의) 모습, 분신"],
+   [138,"express","","표현하다"],
+   [139,"monitoring","","감시하는, 관찰하는"],
+   [140,"(river) crossings","","(강을 건너는) 교량, 건너는 곳"],
+   [141,"hub","","중심지, 메인 관제 센터"],
+   [142,"handle","","다루다, 처리하다"],
+   [143,"criminal","","범인 / 범죄자"],
+   [144,"tracking","","추적"],
+   [145,"resident","","주민, 거주자"],
+   [146,"stroll","","저녁 산책"],
+   [147,"brief","","짧은, 잠시 동안의"],
+   [148,"respite","","휴식, 안식"],
+   [149,"pull (people) back","","(사람들을) 붙잡다, 끌어당기다"],
+   [150,"integrate","","통합하다"],
+   [151,"...from the edge","","벼랑 끝에서 (위기에서)"],
+   [152,"establish","","설립하다"],
+   [153,"comprehensive","","종합적인, 포괄적인"],
+   [154,"response","","대응, 조치"],
+   [155,"pedestrian","","보행자"],
+   [156,"accessible","","접근 가능한, 이용할 수 있는"],
+   [157,"prevention","","예방, 방지"],
+   [158,"drug enforcement","","마약 단속"],
+   [159,"suspect","","의심하다"],
+   [160,"result in","","(결과로) 이어지다, 야기하다"],
+   [161,"dispatch","","출동, 파견"],
+   [162,"protest","","반항 / 저항"],
+   [163,"determined","","결심한, 단호한"],
+   [164,"intervention","","개입, 구조 조치"],
+   [165,"reflects","","반영하다, 나타내다"],
+   [166,"scale","","규모, 정도"],
+   [167,"crisis","","위기, 비상 상황"],
+   [168,"effectiveness","","효과성, 유효성"],
+   [169,"city data","","시 통계 / 자료"],
+   [170,"surpass","","넘어서다, 초과하다"],
+   [171,"consecutive","","연속적인, 계속되는"],
+   [172,"survival rate","","생존율"],
+   [173,"credit","","공로, 공적"],
+   [174,"trigger","","작동시키다, 울리다"],
+   [175,"object","","물체, 대상"],
+   [176,"loiter (loitering zone)","","서성거리다 (배회 구역)"],
+   [177,"section","","구간, 영역"],
+   [178,"extend","","미치다, 연장하다"],
+   [179,"person of interest","","관찰 대상자, 주요 인물"],
+   [180,"flag","","표시하다, 포착하다, 주의를 끌다"],
+   [181,"determine","","판가름하다, 확인하다"],
+   [182,"contemplate","","고려하다, 심사숙고하다"],
+   [183,"confirm","","확인하다"],
+   [184,"average","","평균 ~이다"],
+   [185,"carry","","지니다, 동반하다"],
+   [186,"strike (-struck-stricken)","","부딪히다, 치다, 충돌하다"],
+   [187,"key","","(형) 핵심적인, 중요한"],
+   [188,"coordination","","협력, 공조"],
+   [189,"spot (a person..)","","(사람을) 포착하다, 발견하다"],
+   [190,"in distress","","위기에 처한, 위험에 빠진"],
+   [191,"live feed","","실시간 영상"],
+   [192,"deploy","","배치하다, 출동하다"],
+   [193,"center's reach","","관제 센터의 범위 / 역할"],
+   [194,"extends","","미치다, 확장되다"],
+   [195,"filter","","필터링하다, 조건으로 걸러내다"],
+   [196,"suspect","","용의자들"],
+   [197,"audit","","감사, 점검"],
+   [198,"falling short","","미치지 못하다, 미흡하다, 부족하다"],
+   [199,"subsequent","","후속의, 뒤이어 일어난"],
+   [200,"solution","","해결책, 대안"]
+  ]}
+];
+SETS.forEach(function(s){
+  s.words = s.rows.map(function(r){
+    return {no:r[0], word:r[1], pos:r[2], mean:r[3], key:s.id + ":" + r[0]};
+  });
+});
+
+var curSet = null;
+var WORDS = [];
+
+/* ---------- state ---------- */
+var cfg = {range:[1,100], mode:"en2ko", count:20};
+var deck = [], idx = 0, graded = false, misses = [], correctCount = 0;
+
+var $ = function(id){return document.getElementById(id);};
+
+function shuffle(a){
+  var b = a.slice();
+  for(var i=b.length-1;i>0;i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var t = b[i]; b[i] = b[j]; b[j] = t;
+  }
+  return b;
+}
+function pool(){
+  return WORDS.filter(function(w){return w.no>=cfg.range[0] && w.no<=cfg.range[1];});
+}
+
+/* ---------- setup UI ---------- */
+var RANGES = [];
+function buildRanges(){
+  var lo = WORDS[0].no, hi = WORDS[WORDS.length-1].no, out = [];
+  out.push({label:"전체 " + lo + "–" + hi, v:[lo,hi]});
+  for(var s = lo; s <= hi; s += 25){
+    var e = Math.min(s + 24, hi);
+    if(e > s) out.push({label:s + "–" + e, v:[s,e]});
+  }
+  if(hi - lo + 1 > 50){
+    var mid = lo + Math.floor((hi - lo + 1) / 2) - 1;
+    out.push({label:lo + "–" + mid, v:[lo,mid]});
+    out.push({label:(mid+1) + "–" + hi, v:[mid+1,hi]});
+  }
+  return out;
+}
+var MODES = [
+  {label:"영 → 한 (객관식)", v:"en2ko"},
+  {label:"한 → 영 (직접 입력)", v:"ko2en"},
+  {label:"섞어서", v:"mix"}
+];
+var COUNTS = [10,20,30,50,0];
+
+function buildOpts(host, items, getLabel, isOn, onPick){
+  host.innerHTML = "";
+  items.forEach(function(it){
+    var b = document.createElement("button");
+    b.className = "opt";
+    b.type = "button";
+    b.textContent = getLabel(it);
+    b.setAttribute("aria-pressed", isOn(it) ? "true" : "false");
+    b.onclick = function(){ onPick(it); };
+    host.appendChild(b);
+  });
+}
+function renderPick(){
+  var host = $("setList");
+  host.innerHTML = "";
+  SETS.forEach(function(s){
+    var b = document.createElement("button");
+    b.className = "setbtn"; b.type = "button";
+    var t = document.createElement("b"); t.textContent = s.name;
+    var d = document.createElement("span");
+    d.textContent = s.words.length + "단어 · " + s.words[0].no + "–" + s.words[s.words.length-1].no + "번";
+    b.appendChild(t); b.appendChild(d);
+    b.onclick = function(){ chooseSet(s); };
+    host.appendChild(b);
+  });
+}
+function chooseSet(s){
+  curSet = s;
+  WORDS = s.words;
+  RANGES = buildRanges();
+  cfg.range = RANGES[0].v;
+  $("setName").textContent = s.name;
+  $("pick").classList.add("hidden");
+  $("setup").classList.remove("hidden");
+  renderSetup();
+}
+function backToPick(){
+  $("setup").classList.add("hidden");
+  $("result").classList.add("hidden");
+  $("quiz").classList.add("hidden");
+  $("pick").classList.remove("hidden");
+}
+function renderSetup(){
+  if(!curSet) return;
+  buildOpts($("rangeOpts"), RANGES,
+    function(r){return r.label;},
+    function(r){return r.v[0]===cfg.range[0] && r.v[1]===cfg.range[1];},
+    function(r){cfg.range = r.v; renderSetup();});
+  buildOpts($("modeOpts"), MODES,
+    function(m){return m.label;},
+    function(m){return m.v===cfg.mode;},
+    function(m){cfg.mode = m.v; renderSetup();});
+  buildOpts($("countOpts"), COUNTS,
+    function(c){return c===0 ? "범위 전체" : c+"문제";},
+    function(c){return c===cfg.count;},
+    function(c){cfg.count = c; renderSetup();});
+  $("rangeNote").textContent = "선택한 범위에 " + pool().length + "단어 있습니다.";
+}
+
+/* ---------- quiz ---------- */
+function makeQuestion(w, p){
+  var kind = cfg.mode === "mix" ? (Math.random() < 0.5 ? "en2ko" : "ko2en") : cfg.mode;
+  var q = {w:w, kind:kind};
+  if(kind === "en2ko"){
+    /* 같은 표제어가 뜻만 다르게 두 번 실린 경우(예: clash 25번·69번)
+       그 다른 뜻을 오답 보기로 쓰면 정답이 둘이 되므로 제외한다. */
+    var usable = p.filter(function(x){ return x.mean !== w.mean && x.word !== w.word; });
+    var same = usable.filter(function(x){return x.pos===w.pos;});
+    var other = usable.filter(function(x){return x.pos!==w.pos;});
+    var picks = shuffle(same).slice(0,3);
+    if(picks.length < 3) picks = picks.concat(shuffle(other).slice(0, 3-picks.length));
+    q.choices = shuffle(picks.concat([w]));
+  }
+  return q;
+}
+function buildDeck(list){
+  var p = pool();
+  deck = list.map(function(w){return makeQuestion(w, p);});
+  idx = 0; correctCount = 0; misses = [];
+  $("setup").classList.add("hidden");
+  $("result").classList.add("hidden");
+  $("quiz").classList.remove("hidden");
+  drawEdge();
+  showQuestion();
+}
+function startNew(){
+  var p = shuffle(pool());
+  var n = cfg.count === 0 ? p.length : Math.min(cfg.count, p.length);
+  buildDeck(p.slice(0, n));
+}
+function drawEdge(){
+  var e = $("edge");
+  e.innerHTML = "";
+  for(var i=0;i<deck.length;i++){
+    var t = document.createElement("div");
+    t.className = "tick";
+    e.appendChild(t);
+  }
+}
+function paintEdge(){
+  var ticks = $("edge").children;
+  for(var i=0;i<ticks.length;i++){
+    var c = "tick";
+    if(deck[i].result === true) c += " done";
+    else if(deck[i].result === false) c += " miss";
+    else if(i === idx) c += " now";
+    ticks[i].className = c;
+  }
+}
+function showQuestion(){
+  graded = false;
+  var q = deck[idx];
+  $("counter").textContent = (idx+1) + " / " + deck.length;
+  $("tally").textContent = "맞은 개수 " + correctCount;
+  $("verdict").textContent = "";
+  $("verdict").className = "verdict";
+  $("nextBtn").textContent = "확인";
+  paintEdge();
+
+  var area = $("answerArea");
+  area.innerHTML = "";
+
+  if(q.kind === "en2ko"){
+    $("qpos").textContent = q.w.pos;
+    $("qprompt").textContent = q.w.word;
+    $("qprompt").className = "prompt" + (q.w.word.length > 14 ? " small" : "");
+    $("qcaret").textContent = "뜻 고르기";
+    q.choices.forEach(function(c, i){
+      var b = document.createElement("button");
+      b.className = "choice";
+      b.type = "button";
+      b.innerHTML = '<span class="n">' + (i+1) + '</span>';
+      b.appendChild(document.createTextNode(c.mean));
+      b.onclick = function(){ if(!graded) grade(c.mean === q.w.mean, c.mean, b); };
+      area.appendChild(b);
+    });
+    $("nextBtn").textContent = "다음";
+  } else {
+    $("qpos").textContent = q.w.pos;
+    $("qprompt").textContent = q.w.mean;
+    $("qprompt").className = "prompt small";
+    var parts = String(q.w.word).replace(/\([^)]*\)/g, " ").trim().split(/\s+/).filter(Boolean);
+    $("qcaret").textContent = parts.length > 1 ? "‸ 영어로 쓰기 (" + parts.length + "단어)" : "‸ 영단어 쓰기";
+    var inp = document.createElement("input");
+    inp.type = "text";
+    inp.id = "typed";
+    inp.autocapitalize = "none";
+    inp.autocomplete = "off";
+    inp.spellcheck = false;
+    inp.placeholder = "영어로 입력";
+    inp.onkeydown = function(e){ if(e.key === "Enter"){ e.preventDefault(); onNext(); } };
+    area.appendChild(inp);
+    inp.focus();
+  }
+}
+function norm(s){ return (s||"").toLowerCase().replace(/[^a-z]/g,""); }
+
+/* "(fee) excessive" 처럼 괄호가 붙은 표제어는 괄호를 빼고 써도 정답으로 본다. */
+function accepted(word){
+  var full = norm(word);
+  var bare = norm(String(word).replace(/\([^)]*\)/g, " "));
+  var out = [full];
+  if(bare && out.indexOf(bare) === -1) out.push(bare);
+  return out;
+}
+function isMatch(typed, word){
+  var t = norm(typed);
+  if(!t) return false;
+  return accepted(word).indexOf(t) > -1;
+}
+
+function grade(ok, given, btn){
+  graded = true;
+  var q = deck[idx];
+  q.result = ok;
+  q.given = given;
+  if(ok){ correctCount++; } else { misses.push(q); }
+
+  var v = $("verdict");
+  if(ok){
+    v.className = "verdict right";
+    v.textContent = "맞았습니다";
+  } else {
+    v.className = "verdict wrong";
+    v.innerHTML = "정답 <b>" + (q.kind === "en2ko" ? q.w.mean : q.w.word) + "</b>";
+  }
+  if(q.kind === "en2ko"){
+    var nodes = $("answerArea").children;
+    for(var i=0;i<nodes.length;i++){
+      nodes[i].disabled = true;
+      if(q.choices[i].mean === q.w.mean) nodes[i].className = "choice right";
+      else if(nodes[i] === btn) nodes[i].className = "choice wrong";
+    }
+  } else {
+    var inp = $("typed");
+    if(inp){ inp.disabled = true; }
+  }
+  $("tally").textContent = "맞은 개수 " + correctCount;
+  paintEdge();
+  $("nextBtn").textContent = (idx === deck.length-1) ? "결과 보기" : "다음";
+}
+function onNext(){
+  var q = deck[idx];
+  if(!graded){
+    if(q.kind === "ko2en"){
+      var inp = $("typed");
+      var typed = inp ? inp.value : "";
+      grade(isMatch(typed, q.w.word), typed.trim(), null);
+    }
+    return;
+  }
+  if(idx === deck.length-1){ showResult(); }
+  else { idx++; showQuestion(); }
+}
+function showResult(){
+  $("quiz").classList.add("hidden");
+  $("result").classList.remove("hidden");
+  $("sNum").textContent = correctCount;
+  $("sDen").textContent = " / " + deck.length;
+  $("sPct").textContent = Math.round(correctCount/deck.length*100) + "점";
+
+  var host = $("missPanel");
+  host.innerHTML = "";
+  var head = document.createElement("p");
+  head.className = "flabel";
+  if(misses.length === 0){
+    head.textContent = "틀린 단어";
+    var none = document.createElement("p");
+    none.style.margin = "0";
+    none.style.fontSize = "14.5px";
+    none.textContent = "없습니다. 전부 맞았습니다.";
+    host.appendChild(head);
+    host.appendChild(none);
+    $("retryWrong").disabled = true;
+    $("retryWrong").style.opacity = ".4";
+  } else {
+    head.textContent = "틀린 단어 " + misses.length + "개";
+    host.appendChild(head);
+    var t = document.createElement("table");
+    host.appendChild(t);
+    $("retryWrong").disabled = false;
+    $("retryWrong").style.opacity = "1";
+    misses.forEach(function(q){
+      var tr = document.createElement("tr");
+      var td1 = document.createElement("td"); td1.className = "num"; td1.textContent = q.w.no;
+      var td2 = document.createElement("td"); td2.className = "w"; td2.textContent = q.w.word;
+      var td3 = document.createElement("td");
+      td3.textContent = q.w.mean;
+      if(q.given){
+        var s = document.createElement("span");
+        s.className = "yours";
+        s.textContent = "내 답 " + q.given;
+        td3.appendChild(s);
+      }
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+      t.appendChild(tr);
+    });
+  }
+}
+
+/* ---------- wiring ---------- */
+$("startBtn").onclick = startNew;
+$("nextBtn").onclick = onNext;
+$("quitBtn").onclick = function(){
+  if(idx > 0 || graded){ showResult(); }
+  else { $("quiz").classList.add("hidden"); $("setup").classList.remove("hidden"); }
+};
+$("restart").onclick = function(){
+  $("result").classList.add("hidden");
+  $("setup").classList.remove("hidden");
+};
+$("chgSet").onclick = backToPick;
+$("retryWrong").onclick = function(){
+  var again = shuffle(misses.map(function(q){return q.w;}));
+  buildDeck(again);
+};
+document.addEventListener("keydown", function(e){
+  if(e.key === "Enter" && !$("quiz").classList.contains("hidden")){
+    if(document.activeElement && document.activeElement.id === "typed") return;
+    e.preventDefault();
+    onNext();
+  }
+});
+renderPick();
+</script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
