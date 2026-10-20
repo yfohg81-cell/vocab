@@ -1,6 +1,6 @@
 /* 단어 카드 전용 오프라인 캐시.
    내용을 고쳐 올릴 때는 아래 CACHE 이름의 숫자를 올려야 새 파일을 받아온다. */
-var CACHE = "vocab-cards-v2";
+var CACHE = "vocab-cards-v3";
 var ASSETS = ["./", "./index.html", "./manifest.json",
               "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 

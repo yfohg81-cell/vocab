@@ -125,7 +125,7 @@
   <section id="pick">
     <p class="flabel" style="margin-bottom:10px">단어 세트 고르기</p>
     <div id="setList"></div>
-    <p class="note" style="text-align:center;margin-top:14px">버전 2026-09-03</p>
+    <p class="note" style="text-align:center;margin-top:14px">버전 2026-10-20</p>
   </section>
 
   <!-- SETUP -->
@@ -133,6 +133,11 @@
     <div class="panel setbar">
       <b id="setName"></b>
       <button class="chg" id="chgSet" type="button">세트 바꾸기</button>
+    </div>
+    <div class="panel">
+      <p class="flabel">방향</p>
+      <div class="opts" id="dirOpts"></div>
+      <p class="note">영 → 한은 영어가 앞면, 한 → 영은 뜻이 앞면입니다. 학습 기록은 방향마다 따로 쌓입니다.</p>
     </div>
     <div class="panel">
       <p class="flabel">범위</p>
@@ -672,9 +677,12 @@ function pickNext(active, last){
 }
 
 /* 세션 시작 카드 만들기: 잘 아는 단어는 시작 streak 를 높여 적게 나오게 한다. */
-function makeCards(words, levels){
+function recKey(w, dir){ return dir === "ko2en" ? w.key + "~ko" : w.key; }
+
+function makeCards(words, levels, dir){
   return words.map(function(w, i){
-    var lv = (levels && levels[w.key] && levels[w.key].lv) || 0;
+    var rk = recKey(w, dir);
+    var lv = (levels && levels[rk] && levels[rk].lv) || 0;
     var start = lv >= 3 ? 2 : (lv === 2 ? 1 : 0);   /* 남은 횟수: 1회 / 2회 / 3회 */
     return {w:w, streak:start, seen:0, wrong:0, finished:false, parked:false, startStreak:start, due:i, seq:i};
   });
@@ -690,10 +698,10 @@ function shuffle(a, rnd){
 }
 
 /* 약한 단어 우선으로 세션 카드 뽑기 */
-function pickWords(pool, n, levels){
+function pickWords(pool, n, levels, dir){
   if(n <= 0 || n >= pool.length) return shuffle(pool);
   var scored = shuffle(pool).map(function(w){
-    var rec = (levels && levels[w.key]) || {lv:0, wrong:0};
+    var rec = (levels && levels[recKey(w, dir)]) || {lv:0, wrong:0};
     return {w:w, score:(rec.lv||0) - Math.min(3, rec.wrong||0)};
   });
   scored.sort(function(a,b){ return a.score - b.score; });
@@ -779,11 +787,12 @@ function bumpLevel(word, ok){
 }
 
 /* ================= app state ================= */
-var cfg = {range:[1,100], size:20};
+var cfg = {range:[1,100], size:20, dir:"en2ko"};
 var active = [], all = [], cur = null, last = null;
 var flipped = false;    /* 지금 뒷면이 보이는가 */
 var revealed = false;   /* 이 카드의 뜻을 한 번이라도 봤는가 */
 var sessionSeen = 0, now = 0;
+var sessDir = "en2ko";   /* 이번 세션의 방향 */
 
 function $(id){ return document.getElementById(id); }
 function poolWords(){
@@ -806,6 +815,11 @@ function buildRanges(){
   return out;
 }
 var SIZES = [10, 20, 30, 50, 0];
+var DIRS = [
+  {label:"영 → 한", v:"en2ko"},
+  {label:"한 → 영", v:"ko2en"}
+];
+function dirLabel(v){ return v === "ko2en" ? "한 → 영" : "영 → 한"; }
 
 function buildOpts(host, items, label, on, pick){
   host.innerHTML = "";
@@ -822,13 +836,17 @@ function renderPick(){
   var host = $("setList");
   host.innerHTML = "";
   SETS.forEach(function(s){
-    var learned = 0;
-    s.words.forEach(function(w){ if(levels[w.key] && levels[w.key].lv >= 3) learned++; });
+    var learned = 0, learnedKo = 0;
+    s.words.forEach(function(w){
+      var a = levels[recKey(w, "en2ko")], b = levels[recKey(w, "ko2en")];
+      if(a && a.lv >= 3) learned++;
+      if(b && b.lv >= 3) learnedKo++;
+    });
     var b = document.createElement("button");
     b.className = "setbtn"; b.type = "button";
     var t = document.createElement("b"); t.textContent = s.name;
     var d = document.createElement("span");
-    d.textContent = s.words.length + "단어 · 외움 " + learned + "개";
+    d.textContent = s.words.length + "단어 · 영→한 외움 " + learned + "개 · 한→영 외움 " + learnedKo + "개";
     b.appendChild(t); b.appendChild(d);
     b.onclick = function(){ chooseSet(s); };
     host.appendChild(b);
@@ -853,6 +871,9 @@ function backToPick(){
 }
 function renderSetup(){
   if(!curSet) return;
+  buildOpts($("dirOpts"), DIRS, function(d){return d.label;},
+    function(d){return d.v===cfg.dir;},
+    function(d){ cfg.dir = d.v; renderSetup(); });
   buildOpts($("rangeOpts"), RANGES, function(r){return r.label;},
     function(r){return r.v[0]===cfg.range[0] && r.v[1]===cfg.range[1];},
     function(r){ cfg.range = r.v; renderSetup(); });
@@ -862,13 +883,14 @@ function renderSetup(){
 
   var p = poolWords();
   var known = 0;
-  p.forEach(function(w){ if(levels[w.key] && levels[w.key].lv >= 3) known++; });
+  p.forEach(function(w){ var r = levels[recKey(w, cfg.dir)]; if(r && r.lv >= 3) known++; });
   $("sizeNote").textContent = "범위 안 " + p.length + "단어 중 외운 것으로 기록된 단어 " + known + "개. 약한 단어가 먼저 뽑힙니다.";
 }
 
 /* ================= session ================= */
 function startSession(words){
-  all = makeCards(words, levels);
+  sessDir = cfg.dir;
+  all = makeCards(words, levels, sessDir);
   active = all.slice();
   seqCounter = all.length;
   now = 0; last = null; sessionSeen = 0;
@@ -884,7 +906,8 @@ function nextCard(){
   flipped = false;
   revealed = false;
   $("card").classList.remove("flipped");
-  $("fHint").textContent = "눌러서 뜻 확인";
+  $("fHint").textContent = sessDir === "ko2en" ? "눌러서 영어 확인" : "눌러서 뜻 확인";
+  $("flipBtn").textContent = sessDir === "ko2en" ? "영어 보기" : "뜻 보기";
   $("preFlip").classList.remove("hidden");
   $("postFlip").classList.add("hidden");
 
@@ -892,10 +915,13 @@ function nextCard(){
   $("bNo").textContent = cur.w.no;
   $("fPos").textContent = cur.w.pos;
   $("bPos").textContent = cur.w.pos;
-  $("fTerm").textContent = cur.w.word;
-  $("fTerm").className = "term" + (cur.w.word.length > 14 ? " sm" : "");
-  $("bTerm").textContent = cur.w.mean;
-  $("bTerm").className = "term ko" + (cur.w.mean.length > 18 ? " sm" : "");
+  var toKo = sessDir === "ko2en";
+  var frontText = toKo ? cur.w.mean : cur.w.word;
+  var backText  = toKo ? cur.w.word : cur.w.mean;
+  $("fTerm").textContent = frontText;
+  $("fTerm").className = termClass(frontText, toKo);
+  $("bTerm").textContent = backText;
+  $("bTerm").className = termClass(backText, !toKo);
   var remain = GOAL - cur.streak;
   $("bStreak").textContent = "이 카드까지 남은 확인 " + remain + "번";
 
@@ -906,6 +932,12 @@ function nextCard(){
 }
 /* 앞뒤로 몇 번이든 뒤집을 수 있다.
    뜻을 한 번이라도 본 뒤에는 어느 면을 보고 있든 채점 버튼이 남아 있는다. */
+/* 한글 면은 단어 단위로 줄바꿈하고, 긴 문구는 글자를 줄인다 */
+function termClass(text, isKo){
+  var long = isKo ? text.length > 18 : text.length > 14;
+  return "term" + (isKo ? " ko" : "") + (long ? " sm" : "");
+}
+
 function flip(){
   if(!cur) return;
   flipped = !flipped;
@@ -931,7 +963,7 @@ function answer(ok){
     if(i > -1) active.splice(i, 1);
   }
   last = cur;
-  bumpLevel(cur.w.key, ok);
+  bumpLevel(recKey(cur.w, sessDir), ok);
   nextCard();
 }
 function finish(){
@@ -982,7 +1014,7 @@ function finish(){
 
 /* ================= wiring ================= */
 $("startBtn").onclick = function(){
-  var words = pickWords(poolWords(), cfg.size, levels);
+  var words = pickWords(poolWords(), cfg.size, levels, cfg.dir);
   if(words.length === 0) return;
   startSession(words);
 };
