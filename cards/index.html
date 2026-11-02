@@ -106,6 +106,15 @@
   .setbtn b{font-family:"Nanum Myeongjo","Apple SD Gothic Neo",serif;font-weight:700;
     font-size:19px;display:block;margin-bottom:3px}
   .setbtn span{font-size:12.5px;color:var(--ink-soft)}
+  #examList{margin-bottom:22px}
+  #examList:empty{display:none}
+  .exambtn{display:block;width:100%;text-align:left;background:var(--ink);color:var(--card);
+    border:1px solid var(--ink);border-radius:3px;padding:16px;cursor:pointer;font:inherit}
+  .exambtn + .exambtn{margin-top:8px}
+  .exambtn:active{transform:translateY(1px)}
+  .exambtn b{font-family:"Nanum Myeongjo","Apple SD Gothic Neo",serif;font-weight:700;
+    font-size:19px;display:block;margin-bottom:3px}
+  .exambtn span{font-size:12.5px;color:var(--line)}
   .setbar{display:flex;justify-content:space-between;align-items:center;padding:12px 14px}
   .setbar b{font-size:15px}
   .chg{background:none;border:none;color:var(--ink-soft);font:inherit;font-size:12.5px;
@@ -123,9 +132,10 @@
 
   <!-- SET PICKER -->
   <section id="pick">
+    <div id="examList"></div>
     <p class="flabel" style="margin-bottom:10px">단어 세트 고르기</p>
     <div id="setList"></div>
-    <p class="note" style="text-align:center;margin-top:14px">버전 2026-10-20</p>
+    <p class="note" style="text-align:center;margin-top:14px">버전 2026-11-02</p>
   </section>
 
   <!-- SETUP -->
@@ -630,6 +640,21 @@ SETS.forEach(function(s){
   });
 });
 
+/* ===== 시험 프리셋 ===================================================
+   공지된 시험을 첫 화면의 버튼 하나로 바로 시작하게 한다. (시험지/카드 공통)
+     set     : 위 SETS 의 id
+     range   : 출제 번호 범위 [처음, 끝]
+     exclude : 범위 안에서 출제하지 않는 번호
+     count   : 시험지의 문항 수 (0 이면 출제 가능 단어 전체). 카드는 전체를 사용
+     mode    : "ko2en" 한 → 영 / "en2ko" 영 → 한 / "mix" (시험지 전용)
+   새 시험은 이 배열에 같은 형태로 이어 붙이면 된다.
+   ==================================================================== */
+var EXAMS = [
+  { id:"exam-1103", name:"11/3 단어 시험", set:"set2", range:[101,200],
+    exclude:[101,102,103,105,109,112,113,114,123,124,125,136,137,138,139,142,143,144,145],
+    count:50, mode:"ko2en" }
+];
+
 var curSet = null;
 var WORDS = [];
 
@@ -787,7 +812,8 @@ function bumpLevel(word, ok){
 }
 
 /* ================= app state ================= */
-var cfg = {range:[1,100], size:20, dir:"en2ko"};
+var cfg = {range:[1,100], exclude:[], size:20, dir:"en2ko"};
+var curExam = null, cfgBeforeExam = null;
 var active = [], all = [], cur = null, last = null;
 var flipped = false;    /* 지금 뒷면이 보이는가 */
 var revealed = false;   /* 이 카드의 뜻을 한 번이라도 봤는가 */
@@ -795,8 +821,20 @@ var sessionSeen = 0, now = 0;
 var sessDir = "en2ko";   /* 이번 세션의 방향 */
 
 function $(id){ return document.getElementById(id); }
+function inScope(w, range, exclude){
+  return w.no >= range[0] && w.no <= range[1] && exclude.indexOf(w.no) === -1;
+}
 function poolWords(){
-  return WORDS.filter(function(w){ return w.no >= cfg.range[0] && w.no <= cfg.range[1]; });
+  return WORDS.filter(function(w){ return inScope(w, cfg.range, cfg.exclude); });
+}
+function setById(id){
+  for(var i = 0; i < SETS.length; i++){ if(SETS[i].id === id) return SETS[i]; }
+  return null;
+}
+function examPool(ex){
+  var s = setById(ex.set);
+  if(!s) return [];
+  return s.words.filter(function(w){ return inScope(w, ex.range, ex.exclude); });
 }
 
 var RANGES = [];
@@ -851,8 +889,30 @@ function renderPick(){
     b.onclick = function(){ chooseSet(s); };
     host.appendChild(b);
   });
+  renderExams();
+}
+function renderExams(){
+  var host = $("examList");
+  host.innerHTML = "";
+  EXAMS.forEach(function(ex){
+    var s = setById(ex.set);
+    var p = examPool(ex);
+    if(!s || p.length === 0) return;
+    var dir = ex.mode === "ko2en" ? "ko2en" : "en2ko";
+    var known = 0;
+    p.forEach(function(w){ var r = levels[recKey(w, dir)]; if(r && r.lv >= 3) known++; });
+    var b = document.createElement("button");
+    b.className = "exambtn"; b.type = "button";
+    var t = document.createElement("b"); t.textContent = ex.name + " 대비";
+    var d = document.createElement("span");
+    d.textContent = s.name + " · " + p.length + "단어 · " + dirLabel(dir) + " · 외움 " + known + "개";
+    b.appendChild(t); b.appendChild(d);
+    b.onclick = function(){ startExam(ex); };
+    host.appendChild(b);
+  });
 }
 function chooseSet(s){
+  leaveExam();
   curSet = s;
   WORDS = s.words;
   RANGES = buildRanges();
@@ -862,7 +922,30 @@ function chooseSet(s){
   $("setup").classList.remove("hidden");
   renderSetup();
 }
+/* 시험 대비는 설정 화면 없이 제외 번호를 뺀 전체 단어로 바로 시작한다. */
+function startExam(ex){
+  var s = setById(ex.set);
+  if(!s) return;
+  if(!curExam) cfgBeforeExam = {dir:cfg.dir, size:cfg.size};
+  curExam = ex;
+  curSet = s;
+  WORDS = s.words;
+  cfg.range = ex.range.slice();
+  cfg.exclude = ex.exclude.slice();
+  cfg.dir = ex.mode === "ko2en" ? "ko2en" : "en2ko";
+  cfg.size = 0;
+  $("pick").classList.add("hidden");
+  startSession(pickWords(poolWords(), 0, levels, cfg.dir));
+}
+function leaveExam(){
+  if(!curExam) return;
+  if(cfgBeforeExam){ cfg.dir = cfgBeforeExam.dir; cfg.size = cfgBeforeExam.size; }
+  cfg.exclude = [];
+  curExam = null;
+  cfgBeforeExam = null;
+}
 function backToPick(){
+  leaveExam();
   $("setup").classList.add("hidden");
   $("study").classList.add("hidden");
   $("done").classList.add("hidden");
@@ -1024,6 +1107,7 @@ $("yesBtn").onclick = function(){ answer(true); };
 $("noBtn").onclick = function(){ answer(false); };
 $("quitBtn").onclick = finish;
 $("homeBtn").onclick = function(){
+  if(curExam){ backToPick(); return; }
   $("done").classList.add("hidden");
   $("setup").classList.remove("hidden");
   renderSetup();
